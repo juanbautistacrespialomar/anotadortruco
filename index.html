@@ -54,11 +54,9 @@
     @media (prefers-reduced-motion: reduce){ .tr-stroke{ animation:none; stroke-dashoffset:0; } }
 
     /* ── Pantalla de inicio ── */
-    .tr-logo{ display:block; margin:0 auto 4px; max-width:120px; max-height:120px; width:auto; height:auto; }
     .tr-title{ font-family:var(--disp); color:var(--tiza); font-size:clamp(44px,12vw,72px);
       text-align:center; margin:6px 0 0; letter-spacing:1px; text-shadow:0 1px 0 rgba(0,0,0,.3); }
     .tr-sub{ font-family:var(--hand); color:var(--tiza); text-align:center; font-size:clamp(18px,5vw,24px); margin:2px 0 18px; }
-    .tr-hint{ font-family:var(--hand); color:var(--tiza-tenue); text-align:center; font-size:14px; margin-top:22px; }
     .tr-picks{ display:flex; gap:18px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
     .tr-pick{ font-family:var(--disp); font-weight:700; font-size:46px; color:var(--tiza);
@@ -83,7 +81,7 @@
     .tr-colscore{ font-family:var(--disp); font-weight:700; font-size:clamp(30px,9vw,44px); line-height:1; }
 
     .tr-seclabel{ font-family:var(--hand); color:var(--tiza-tenue); font-size:13px; text-transform:uppercase; letter-spacing:1.5px; }
-    .tr-cuadritos{ display:flex; flex-wrap:wrap; gap:6px; padding:4px 0 8px; align-content:flex-start; }
+    .tr-cuadritos{ display:flex; flex-direction:column; gap:6px; padding:4px 0 8px; align-items:flex-start; }
     .tr-celda{ width:clamp(34px,11vw,46px); aspect-ratio:1/1; }
     .tr-mitad{ border-top:3px solid var(--tiza); opacity:.55; margin:2px 0; }
 
@@ -243,14 +241,12 @@
         // Pantalla de inicio
         html =
           '<div class="marco"><div class="pizarra">' +
-            '<img class="tr-logo" src="./Logo.png" alt="" onerror="this.style.display=\'none\'" />' +
             '<h1 class="tr-title">Truco</h1>' +
             '<p class="tr-sub">¿A cuánto jugamos?</p>' +
             '<div class="tr-picks">' +
               '<button class="tr-pick" onclick="truco.pick(30)">30</button>' +
               '<button class="tr-pick" onclick="truco.pick(40)">40</button>' +
             "</div>" +
-            '<p class="tr-hint">Se anota de a 5: cuatro palitos y la diagonal.</p>' +
           "</div></div>";
         app.innerHTML = html;
         return;
