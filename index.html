@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#15302a" />
+  <title>Truco</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./Logo.png" />
+  <link rel="apple-touch-icon" href="./Logo.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Truco" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --pizarra:#15302a; --pizarra-hi:#1d3d35;
+      --madera:#3a2a18; --madera-hi:#5a4226;
+      --tiza:#eef0e2; --tiza-tenue:rgba(238,240,226,.35);
+      --celeste:#a7d8de; --durazno:#eab69f;
+      --hand:'Patrick Hand','Comic Sans MS',cursive;
+      --disp:'Caveat','Patrick Hand',cursive;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+    body{
+      min-height:100vh; min-height:100dvh;
+      background:radial-gradient(120% 120% at 50% 0%, var(--madera-hi), var(--madera));
+      display:flex; align-items:center; justify-content:center;
+      padding:16px; padding-top:max(16px, env(safe-area-inset-top));
+      padding-bottom:max(16px, env(safe-area-inset-bottom));
+    }
+    #app{ width:100%; max-width:560px; }
+
+    .marco{
+      background:linear-gradient(160deg, var(--madera-hi), var(--madera));
+      border-radius:18px; padding:14px;
+      box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .pizarra{
+      position:relative;
+      background:radial-gradient(140% 120% at 30% 10%, var(--pizarra-hi), var(--pizarra));
+      border-radius:12px; padding:20px 18px 18px; overflow:hidden;
+      box-shadow:inset 0 0 60px rgba(0,0,0,.5), inset 0 0 0 2px rgba(0,0,0,.25);
+    }
+
+    /* trazo de tiza: el palito se dibuja al aparecer */
+    @keyframes tr-draw{ from{ stroke-dashoffset:1; } to{ stroke-dashoffset:0; } }
+    .tr-stroke{ stroke-dasharray:1; animation:tr-draw .32s ease forwards; }
+    @media (prefers-reduced-motion: reduce){ .tr-stroke{ animation:none; stroke-dashoffset:0; } }
+
+    /* ── Pantalla de inicio ── */
+    .tr-logo{ display:block; margin:0 auto 4px; max-width:120px; max-height:120px; width:auto; height:auto; }
+    .tr-title{ font-family:var(--disp); color:var(--tiza); font-size:clamp(44px,12vw,72px);
+      text-align:center; margin:6px 0 0; letter-spacing:1px; text-shadow:0 1px 0 rgba(0,0,0,.3); }
+    .tr-sub{ font-family:var(--hand); color:var(--tiza); text-align:center; font-size:clamp(18px,5vw,24px); margin:2px 0 18px; }
+    .tr-hint{ font-family:var(--hand); color:var(--tiza-tenue); text-align:center; font-size:14px; margin-top:22px; }
+    .tr-picks{ display:flex; gap:18px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
+
+    .tr-pick{ font-family:var(--disp); font-weight:700; font-size:46px; color:var(--tiza);
+      background:rgba(0,0,0,.18); border:2.5px dashed var(--tiza-tenue); border-radius:14px;
+      width:120px; height:120px; cursor:pointer; transition:transform .12s ease, background .12s ease; }
+    .tr-pick:hover{ background:rgba(0,0,0,.32); transform:translateY(-2px); }
+    .tr-pick:active{ transform:translateY(0) scale(.97); }
+    .tr-pick.tr-small{ width:auto; height:auto; padding:10px 22px; font-size:26px; }
+
+    /* ── Tablero ── */
+    .tr-top{ display:flex; justify-content:space-between; align-items:baseline;
+      font-family:var(--hand); color:var(--tiza); margin-bottom:8px; padding:0 2px; }
+    .tr-tanto{ font-size:18px; color:var(--tiza-tenue); }
+    .tr-chicos{ font-size:18px; }
+
+    .tr-tablero{ display:flex; align-items:stretch; border-top:2px solid var(--tiza-tenue); padding-top:6px; }
+    .tr-centro{ width:0; border-left:2px solid var(--tiza-tenue); margin:0 4px; }
+    .tr-col{ flex:1; display:flex; flex-direction:column; padding:0 8px; min-width:0; }
+
+    .tr-colhead{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+    .tr-colname{ font-family:var(--disp); font-weight:700; font-size:clamp(22px,6vw,30px); letter-spacing:.5px; }
+    .tr-colscore{ font-family:var(--disp); font-weight:700; font-size:clamp(30px,9vw,44px); line-height:1; }
+
+    .tr-seclabel{ font-family:var(--hand); color:var(--tiza-tenue); font-size:13px; text-transform:uppercase; letter-spacing:1.5px; }
+    .tr-cuadritos{ display:flex; flex-wrap:wrap; gap:6px; padding:4px 0 8px; align-content:flex-start; }
+    .tr-celda{ width:clamp(34px,11vw,46px); aspect-ratio:1/1; }
+    .tr-mitad{ border-top:3px solid var(--tiza); opacity:.55; margin:2px 0; }
+
+    .tr-botones{ display:flex; gap:8px; margin-top:auto; padding-top:10px; }
+    .tr-btn{ flex:1; font-family:var(--disp); font-weight:700; font-size:30px; color:var(--tiza);
+      background:rgba(0,0,0,.22); border:2px solid var(--tiza-tenue); border-radius:12px;
+      height:52px; cursor:pointer; transition:transform .1s ease, background .12s ease; }
+    .tr-btn:hover{ background:rgba(0,0,0,.36); }
+    .tr-btn:active{ transform:scale(.95); }
+
+    .tr-acciones{ display:flex; justify-content:center; gap:20px; margin-top:16px;
+      border-top:1px solid var(--tiza-tenue); padding-top:12px; }
+    .tr-link{ font-family:var(--hand); font-size:16px; color:var(--tiza); opacity:.85;
+      background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+    .tr-link:hover{ opacity:1; }
+
+    .tr-reset-wrap{ display:flex; justify-content:center; margin-top:14px; }
+    .tr-reset{ font-family:var(--disp); font-weight:700; font-size:20px; color:var(--durazno);
+      background:rgba(0,0,0,.18); border:2px solid var(--durazno); border-radius:12px;
+      padding:10px 28px; cursor:pointer; opacity:.9; transition:transform .1s ease, background .12s ease; }
+    .tr-reset:hover{ background:rgba(0,0,0,.3); opacity:1; }
+    .tr-reset:active{ transform:scale(.97); }
+
+    /* ── Overlays (ganador y confirmación) ── */
+    .tr-overlay{ position:absolute; inset:0; background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px); }
+    .tr-card{ background:var(--pizarra-hi); border:2px dashed var(--tiza-tenue); border-radius:14px;
+      padding:26px 24px; text-align:center; box-shadow:0 12px 30px rgba(0,0,0,.5); max-width:340px; }
+    .tr-win{ font-family:var(--disp); font-weight:700; font-size:clamp(30px,8vw,40px); margin:0 0 4px; }
+    .tr-winsub{ font-family:var(--hand); color:var(--tiza-tenue); margin:0 0 18px; font-size:16px; }
+    .tr-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+    /* foco accesible */
+    .tr-pick:focus-visible, .tr-btn:focus-visible, .tr-link:focus-visible, .tr-reset:focus-visible{
+      outline:3px solid var(--celeste); outline-offset:2px; }
+
+    @media (max-width:380px){ .tr-col{ padding:0 4px; } .tr-cuadritos{ gap:4px; } }
+  </style>
+</head>
+<body>
+  <!-- filtro de tiza compartido por todos los cuadritos -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="tiza" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="app"></div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    var TIZA = "#eef0e2";
+    var KEY = "truco_estado_v1"; // clave fija: no cambiarla para no perder datos
+
+    var state = {
+      target: null,          // 30 | 40 | null
+      us: 0, them: 0,
+      chicosUs: 0, chicosThem: 0,
+      winner: null,          // 'us' | 'them' | null
+      confirmReset: false
+    };
+
+    /* ── Persistencia (localStorage, sobrevive a las actualizaciones) ── */
+    function save() {
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          target: state.target, us: state.us, them: state.them,
+          chicosUs: state.chicosUs, chicosThem: state.chicosThem
+        }));
+      } catch (e) { /* si no hay storage, seguimos en memoria */ }
+    }
+    function load() {
+      try {
+        var raw = localStorage.getItem(KEY);
+        if (!raw) return;
+        var s = JSON.parse(raw);
+        state.target = s.target || null;
+        state.us = s.us || 0;
+        state.them = s.them || 0;
+        state.chicosUs = s.chicosUs || 0;
+        state.chicosThem = s.chicosThem || 0;
+        if (state.target && state.us >= state.target) state.winner = "us";
+        else if (state.target && state.them >= state.target) state.winner = "them";
+      } catch (e) { /* arranca limpio si el dato está corrupto */ }
+    }
+
+    /* ── Un cuadrito de 5 puntos (orden tradicional del truco) ── */
+    var PALITOS = [
+      [8, 6, 8, 34],    // 1 izquierda
+      [8, 6, 32, 6],    // 2 arriba
+      [32, 6, 32, 34],  // 3 derecha
+      [8, 34, 32, 34],  // 4 abajo
+      [8, 6, 32, 34]    // 5 diagonal
+    ];
+    function cuadritoSVG(filled, animateLast) {
+      var lines = "";
+      for (var i = 0; i < filled; i++) {
+        var p = PALITOS[i];
+        var cls = (animateLast && i === filled - 1) ? "tr-stroke" : "";
+        lines += '<line x1="' + p[0] + '" y1="' + p[1] + '" x2="' + p[2] + '" y2="' + p[3] +
+                 '" pathLength="1" class="' + cls + '" />';
+      }
+      return '<svg viewBox="0 0 40 40" width="100%" height="100%" style="display:block">' +
+             '<g filter="url(#tiza)" stroke="' + TIZA + '" stroke-width="2.6" stroke-linecap="round" opacity="0.94">' +
+             lines + '</g></svg>';
+    }
+
+    /* ── Una sección: Malas o Buenas ── */
+    function seccionHTML(label, puntos, nq, animateLast) {
+      var ultimoCuadrito = puntos > 0 ? Math.ceil(puntos / 5) - 1 : -1;
+      var celdas = "";
+      for (var i = 0; i < nq; i++) {
+        var filled = Math.max(0, Math.min(5, puntos - i * 5));
+        var anim = animateLast && i === ultimoCuadrito;
+        celdas += '<div class="tr-celda">' + cuadritoSVG(filled, anim) + "</div>";
+      }
+      return '<span class="tr-seclabel">' + label + "</span>" +
+             '<div class="tr-cuadritos">' + celdas + "</div>";
+    }
+
+    /* ── Una columna: Nosotros o Ellos ── */
+    function columnaHTML(titulo, color, score, lado, animateSide) {
+      var half = state.target / 2;
+      var malas = Math.min(score, half);
+      var buenas = Math.max(0, score - half);
+      var nq = half / 5;
+      var animar = animateSide === lado;
+      var animMalas = animar && buenas === 0;
+      var animBuenas = animar && buenas > 0;
+
+      return '<div class="tr-col">' +
+        '<div class="tr-colhead">' +
+          '<span class="tr-colname" style="color:' + color + '">' + titulo + "</span>" +
+          '<span class="tr-colscore" style="color:' + color + '">' + score + "</span>" +
+        "</div>" +
+        seccionHTML("Malas", malas, nq, animMalas) +
+        '<div class="tr-mitad"></div>' +
+        seccionHTML("Buenas", buenas, nq, animBuenas) +
+        '<div class="tr-botones">' +
+          '<button class="tr-btn" onclick="truco.sub(\'' + lado + '\')" aria-label="Restar punto a ' + titulo + '">−</button>' +
+          '<button class="tr-btn" onclick="truco.add(\'' + lado + '\')" aria-label="Sumar punto a ' + titulo + '">+</button>' +
+        "</div>" +
+      "</div>";
+    }
+
+    /* ── Render principal ── */
+    function render(animateSide) {
+      var app = document.getElementById("app");
+      var html = "";
+
+      if (!state.target) {
+        // Pantalla de inicio
+        html =
+          '<div class="marco"><div class="pizarra">' +
+            '<img class="tr-logo" src="./Logo.png" alt="" onerror="this.style.display=\'none\'" />' +
+            '<h1 class="tr-title">Truco</h1>' +
+            '<p class="tr-sub">¿A cuánto jugamos?</p>' +
+            '<div class="tr-picks">' +
+              '<button class="tr-pick" onclick="truco.pick(30)">30</button>' +
+              '<button class="tr-pick" onclick="truco.pick(40)">40</button>' +
+            "</div>" +
+            '<p class="tr-hint">Se anota de a 5: cuatro palitos y la diagonal.</p>' +
+          "</div></div>";
+        app.innerHTML = html;
+        return;
+      }
+
+      // Tablero
+      html =
+        '<div class="marco"><div class="pizarra">' +
+          '<div class="tr-top">' +
+            '<span class="tr-tanto">a ' + state.target + "</span>" +
+            '<span class="tr-chicos">Chicos&nbsp;&nbsp;' +
+              '<b style="color:var(--celeste)">' + state.chicosUs + "</b>&nbsp;—&nbsp;" +
+              '<b style="color:var(--durazno)">' + state.chicosThem + "</b></span>" +
+          "</div>" +
+          '<div class="tr-tablero">' +
+            columnaHTML("Nosotros", "#a7d8de", state.us, "us", animateSide) +
+            '<div class="tr-centro"></div>' +
+            columnaHTML("Ellos", "#eab69f", state.them, "them", animateSide) +
+          "</div>" +
+          '<div class="tr-acciones">' +
+            '<button class="tr-link" onclick="truco.cambiarTanto()">Cambiar tanto</button>' +
+          "</div>" +
+          '<div class="tr-reset-wrap">' +
+            '<button class="tr-reset" onclick="truco.pedirReset()">Reiniciar</button>' +
+          "</div>" +
+
+          // Overlay: ganador del partido
+          (state.winner ?
+            '<div class="tr-overlay" role="dialog" aria-modal="true">' +
+              '<div class="tr-card">' +
+                '<h2 class="tr-win" style="color:' + (state.winner === "us" ? "#a7d8de" : "#eab69f") + '">' +
+                  (state.winner === "us" ? "¡Ganaron Nosotros!" : "¡Ganaron Ellos!") + "</h2>" +
+                '<p class="tr-winsub">Partido terminado · se anotó el chico.</p>' +
+                '<div class="tr-row">' +
+                  '<button class="tr-pick tr-small" onclick="truco.otraMano()">Otra mano</button>' +
+                  '<button class="tr-link" onclick="truco.deshacer()">Deshacer</button>' +
+                "</div>" +
+              "</div>" +
+            "</div>" : "") +
+
+          // Overlay: confirmar reinicio
+          (state.confirmReset ?
+            '<div class="tr-overlay" role="dialog" aria-modal="true">' +
+              '<div class="tr-card">' +
+                '<h2 class="tr-win" style="color:var(--tiza)">¿Reiniciar todo?</h2>' +
+                '<p class="tr-winsub">Se borran los puntos y los chicos. No se puede deshacer.</p>' +
+                '<div class="tr-row">' +
+                  '<button class="tr-pick tr-small" onclick="truco.reset()">Sí, reiniciar</button>' +
+                  '<button class="tr-link" onclick="truco.cancelarReset()">Cancelar</button>' +
+                "</div>" +
+              "</div>" +
+            "</div>" : "") +
+
+        "</div></div>";
+
+      app.innerHTML = html;
+    }
+
+    /* ── Acciones (expuestas para los onclick) ── */
+    window.truco = {
+      pick: function (t) {
+        state.target = t; state.us = 0; state.them = 0;
+        state.winner = null; save(); render();
+      },
+      add: function (lado) {
+        if (state.winner) return;
+        var key = lado === "us" ? "us" : "them";
+        if (state[key] >= state.target) return;
+        state[key]++;
+        if (state[key] >= state.target) {
+          state.winner = lado;
+          if (lado === "us") state.chicosUs++; else state.chicosThem++;
+        }
+        save(); render(lado);
+      },
+      sub: function (lado) {
+        var key = lado === "us" ? "us" : "them";
+        if (state[key] > 0) state[key]--;
+        save(); render();
+      },
+      otraMano: function () {
+        state.us = 0; state.them = 0; state.winner = null;
+        save(); render();
+      },
+      deshacer: function () {
+        if (state.winner === "us") { state.chicosUs = Math.max(0, state.chicosUs - 1); state.us = state.target - 1; }
+        else if (state.winner === "them") { state.chicosThem = Math.max(0, state.chicosThem - 1); state.them = state.target - 1; }
+        state.winner = null; save(); render();
+      },
+      cambiarTanto: function () {
+        state.us = 0; state.them = 0; state.winner = null; state.target = null;
+        save(); render();
+      },
+      pedirReset: function () { state.confirmReset = true; render(); },
+      cancelarReset: function () { state.confirmReset = false; render(); },
+      reset: function () {
+        state.us = 0; state.them = 0; state.chicosUs = 0; state.chicosThem = 0;
+        state.winner = null; state.confirmReset = false;
+        save(); render();
+      }
+    };
+
+    /* ── Arranque ── */
+    load();
+    render();
+
+    /* ── Registro del service worker (offline) ── */
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./service-worker.js").catch(function () { /* sin SW, la app igual funciona online */ });
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
