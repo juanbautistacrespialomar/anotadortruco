@@ -29,17 +29,16 @@
     html,body{ margin:0; padding:0; }
     html{
       min-height:100%;
-      background:var(--madera);          /* color de fondo sólido: nunca se ve blanco detrás */
-      background:radial-gradient(120% 120% at 50% 0%, var(--madera-hi), var(--madera));
-      background-attachment:fixed;       /* el gradiente queda fijo aunque cambie la barra del navegador */
+      background:var(--madera);   /* color sólido: cubre TODO, incluida la franja del home del iPhone */
     }
     body{
       min-height:100vh; min-height:100dvh;
-      background:transparent;            /* el fondo lo pone html; así cubre toda la pantalla siempre */
+      background-color:var(--madera);
+      background:radial-gradient(120% 120% at 50% 0%, var(--madera-hi), var(--madera));
       display:flex; align-items:center; justify-content:center;
       padding:16px; padding-top:max(16px, env(safe-area-inset-top));
       padding-bottom:max(16px, env(safe-area-inset-bottom));
-      overscroll-behavior:none;          /* corta el "rebote" que mostraba el blanco al deslizar */
+      overscroll-behavior:none;          /* corta el "rebote" que asomaba el blanco al deslizar */
       touch-action:manipulation;              /* evita el zoom por doble toque */
       -webkit-tap-highlight-color:transparent; /* saca el flash gris al tocar */
       -webkit-user-select:none; user-select:none;
