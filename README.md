@@ -1,4 +1,4 @@
-# Truco 🎴
+# Anotador de Truco 🎴
 
 Anotador de truco con el clásico **cartón de tiza**: palitos que se juntan de a 5 (cuatro lados y la diagonal), dividido en **Nosotros** y **Ellos**, con **malas** y **buenas**. Elegís si jugás **a 30 o a 40** antes de empezar. Funciona **offline** y se instala en el celular como una app.
 
