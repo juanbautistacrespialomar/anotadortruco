@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#15302a" />
   <title>Truco</title>
 
@@ -29,12 +29,12 @@
     html,body{ margin:0; padding:0; }
     html{
       min-height:100%;
-      background:var(--madera);   /* color sólido: cubre TODO, incluida la franja del home del iPhone */
+      background:var(--pizarra);   /* color sólido verde: cubre TODO, incluida la franja del home del iPhone */
     }
     body{
       min-height:100vh; min-height:100dvh;
-      background-color:var(--madera);
-      background:radial-gradient(120% 120% at 50% 0%, var(--madera-hi), var(--madera));
+      background-color:var(--pizarra);
+      background:radial-gradient(120% 120% at 50% 0%, var(--pizarra-hi), var(--pizarra));
       display:flex; align-items:center; justify-content:center;
       padding:16px; padding-top:max(16px, env(safe-area-inset-top));
       padding-bottom:max(16px, env(safe-area-inset-bottom));
@@ -46,25 +46,28 @@
     #app{ width:100%; max-width:560px; }
 
     .marco{
-      background:linear-gradient(160deg, var(--madera-hi), var(--madera));
-      border-radius:18px; padding:14px;
-      box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+      background:transparent;
+      border-radius:18px; padding:0;
     }
     .pizarra{
       position:relative;
       background:radial-gradient(140% 120% at 30% 10%, var(--pizarra-hi), var(--pizarra));
-      border-radius:12px; padding:20px 18px 18px; overflow:hidden;
-      box-shadow:inset 0 0 60px rgba(0,0,0,.5), inset 0 0 0 2px rgba(0,0,0,.25);
+      border-radius:14px; padding:20px 18px 18px; overflow:hidden;
+      box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 0 60px rgba(0,0,0,.5), inset 0 0 0 2px rgba(0,0,0,.25);
     }
 
-    /* trazo de tiza: el palito se dibuja al aparecer */
-    @keyframes tr-draw{ from{ stroke-dashoffset:1; } to{ stroke-dashoffset:0; } }
-    .tr-stroke{ stroke-dasharray:1; animation:tr-draw .32s ease forwards; }
+    /* trazo de tiza: el palito se dibuja al aparecer.
+       Usamos la longitud real del palito (--len) en vez de pathLength,
+       porque iOS/Safari no respeta pathLength en <line> y dejaba el trazo invisible. */
+    @keyframes tr-draw{ from{ stroke-dashoffset:var(--len,40); } to{ stroke-dashoffset:0; } }
+    .tr-stroke{ stroke-dasharray:var(--len,40); animation:tr-draw .32s ease forwards; }
     @media (prefers-reduced-motion: reduce){ .tr-stroke{ animation:none; stroke-dashoffset:0; } }
 
     /* ── Pantalla de inicio ── */
-    .tr-title{ font-family:var(--disp); color:var(--tiza); font-size:clamp(44px,12vw,72px);
-      text-align:center; margin:6px 0 0; letter-spacing:1px; text-shadow:0 1px 0 rgba(0,0,0,.3); }
+    .tr-logo{ display:block; width:clamp(96px,30vw,150px); height:auto; margin:2px auto 8px;
+      filter:drop-shadow(0 3px 8px rgba(0,0,0,.4)); }
+    .tr-title{ font-family:var(--disp); color:var(--tiza); font-size:clamp(34px,9.5vw,58px);
+      text-align:center; margin:6px 0 0; line-height:1.05; letter-spacing:1px; text-shadow:0 1px 0 rgba(0,0,0,.3); }
     .tr-sub{ font-family:var(--hand); color:var(--tiza); text-align:center; font-size:clamp(18px,5vw,24px); margin:2px 0 18px; }
     .tr-picks{ display:flex; gap:18px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
@@ -89,15 +92,18 @@
     .tr-colname{ font-family:var(--disp); font-weight:700; font-size:clamp(22px,6vw,30px); letter-spacing:.5px; }
     .tr-colscore{ font-family:var(--disp); font-weight:700; font-size:clamp(30px,9vw,44px); line-height:1; }
 
-    .tr-seclabel{ font-family:var(--hand); color:var(--tiza-tenue); font-size:13px; text-transform:uppercase; letter-spacing:1.5px; }
-    .tr-cuadritos{ display:flex; flex-direction:column; gap:6px; padding:4px 0 8px; align-items:flex-start; }
+    .tr-seclabel{ display:block; text-align:center; font-family:var(--hand); color:var(--tiza-tenue); font-size:13px; text-transform:uppercase; letter-spacing:1.5px; }
+    .tr-cuadritos{ display:flex; flex-direction:column; gap:6px; padding:4px 0 8px; align-items:center; }
     .tr-celda{ width:clamp(34px,11vw,46px); aspect-ratio:1/1; }
     .tr-mitad{ border-top:3px solid var(--tiza); opacity:.55; margin:2px 0; }
 
     .tr-botones{ display:flex; gap:8px; margin-top:auto; padding-top:10px; }
-    .tr-btn{ flex:1; font-family:var(--disp); font-weight:700; font-size:30px; color:var(--tiza);
+    .tr-btn{ flex:1; display:flex; align-items:center; justify-content:center; line-height:1; padding:0;
+      font-family:var(--disp); font-weight:700; font-size:30px; color:var(--tiza);
       background:rgba(0,0,0,.22); border:2px solid var(--tiza-tenue); border-radius:12px;
       height:52px; cursor:pointer; transition:transform .1s ease, background .12s ease; }
+    /* + y − dibujados como SVG: centrado perfecto, sin depender de la métrica de la fuente */
+    .tr-ico{ width:28px; height:28px; display:block; stroke:var(--tiza); stroke-width:2.6; stroke-linecap:round; }
     .tr-btn:hover{ background:rgba(0,0,0,.36); }
     .tr-btn:active{ transform:scale(.95); }
 
@@ -127,6 +133,12 @@
     .tr-pick:focus-visible, .tr-btn:focus-visible, .tr-link:focus-visible, .tr-reset:focus-visible{
       outline:3px solid var(--celeste); outline-offset:2px; }
 
+    /* A 40 hay 8 cuadritos por columna (4 malas + 4 buenas): achicamos para que entre todo sin scrollear */
+    .marco.tr-t40 .tr-celda{ width:clamp(26px,8vw,40px); }
+    .marco.tr-t40 .tr-cuadritos{ gap:4px; padding:2px 0 5px; }
+    .marco.tr-t40 .tr-colscore{ font-size:clamp(26px,8vw,38px); }
+    .marco.tr-t40 .pizarra{ padding:14px 16px 14px; }
+
     @media (max-width:380px){ .tr-col{ padding:0 4px; } .tr-cuadritos{ gap:4px; } }
   </style>
 </head>
@@ -134,7 +146,10 @@
   <!-- filtro de tiza compartido por todos los cuadritos -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-      <filter id="tiza" x="-20%" y="-20%" width="140%" height="140%">
+      <!-- filterUnits=userSpaceOnUse: región fija en el viewBox 0..40.
+           Si fuera objectBoundingBox (default), una línea vertical (bbox ancho 0)
+           daría región de ancho 0 y el palito no se pintaría → ese era el bug del primer punto. -->
+      <filter id="tiza" filterUnits="userSpaceOnUse" x="-6" y="-6" width="52" height="52">
         <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" result="n" />
         <feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" />
       </filter>
@@ -194,9 +209,12 @@
       var lines = "";
       for (var i = 0; i < filled; i++) {
         var p = PALITOS[i];
-        var cls = (animateLast && i === filled - 1) ? "tr-stroke" : "";
+        var animar = animateLast && i === filled - 1;
+        // longitud real del palito → el dasharray se calibra solo, sin depender de pathLength
+        var len = Math.hypot(p[2] - p[0], p[3] - p[1]).toFixed(1);
+        var attrs = animar ? ' class="tr-stroke" style="--len:' + len + '"' : '';
         lines += '<line x1="' + p[0] + '" y1="' + p[1] + '" x2="' + p[2] + '" y2="' + p[3] +
-                 '" pathLength="1" class="' + cls + '" />';
+                 '"' + attrs + ' />';
       }
       return '<svg viewBox="0 0 40 40" width="100%" height="100%" style="display:block">' +
              '<g filter="url(#tiza)" stroke="' + TIZA + '" stroke-width="2.6" stroke-linecap="round" opacity="0.94">' +
@@ -235,8 +253,12 @@
         '<div class="tr-mitad"></div>' +
         seccionHTML("Buenas", buenas, nq, animBuenas) +
         '<div class="tr-botones">' +
-          '<button class="tr-btn" onclick="truco.sub(\'' + lado + '\')" aria-label="Restar punto a ' + titulo + '">−</button>' +
-          '<button class="tr-btn" onclick="truco.add(\'' + lado + '\')" aria-label="Sumar punto a ' + titulo + '">+</button>' +
+          '<button class="tr-btn" onclick="truco.sub(\'' + lado + '\')" aria-label="Restar punto a ' + titulo + '">' +
+            '<svg class="tr-ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+          '</button>' +
+          '<button class="tr-btn" onclick="truco.add(\'' + lado + '\')" aria-label="Sumar punto a ' + titulo + '">' +
+            '<svg class="tr-ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><line x1="12" y1="5" x2="12" y2="19"/></svg>' +
+          '</button>' +
         "</div>" +
       "</div>";
     }
@@ -250,7 +272,8 @@
         // Pantalla de inicio
         html =
           '<div class="marco"><div class="pizarra">' +
-            '<h1 class="tr-title">Truco</h1>' +
+            '<img src="./Logo.png" alt="" class="tr-logo" onerror="this.style.display=\'none\'" />' +
+            '<h1 class="tr-title">¿Jugamos uno?</h1>' +
             '<p class="tr-sub">¿A cuánto jugamos?</p>' +
             '<div class="tr-picks">' +
               '<button class="tr-pick" onclick="truco.pick(30)">30</button>' +
@@ -262,8 +285,9 @@
       }
 
       // Tablero
+      var claseMarco = state.target === 40 ? "marco tr-t40" : "marco";
       html =
-        '<div class="marco"><div class="pizarra">' +
+        '<div class="' + claseMarco + '"><div class="pizarra">' +
           '<div class="tr-top">' +
             '<span class="tr-tanto">a ' + state.target + "</span>" +
             '<span class="tr-chicos">Chicos&nbsp;&nbsp;' +
@@ -290,7 +314,7 @@
                   (state.winner === "us" ? "¡Ganaron Nosotros!" : "¡Ganaron Ellos!") + "</h2>" +
                 '<p class="tr-winsub">Partido terminado · se anotó el chico.</p>' +
                 '<div class="tr-row">' +
-                  '<button class="tr-pick tr-small" onclick="truco.otraMano()">Otra mano</button>' +
+                  '<button class="tr-pick tr-small" onclick="truco.otraMano()">¿Revancha?</button>' +
                   '<button class="tr-link" onclick="truco.deshacer()">Deshacer</button>' +
                 "</div>" +
               "</div>" +
@@ -341,9 +365,11 @@
         save(); render();
       },
       deshacer: function () {
-        if (state.winner === "us") { state.chicosUs = Math.max(0, state.chicosUs - 1); state.us = state.target - 1; }
-        else if (state.winner === "them") { state.chicosThem = Math.max(0, state.chicosThem - 1); state.them = state.target - 1; }
-        state.winner = null; save(); render();
+        // revierte el chico recién anotado (ese partido se cancela) y vuelve a la pantalla de inicio
+        if (state.winner === "us") state.chicosUs = Math.max(0, state.chicosUs - 1);
+        else if (state.winner === "them") state.chicosThem = Math.max(0, state.chicosThem - 1);
+        state.winner = null; state.us = 0; state.them = 0; state.target = null;
+        save(); render();
       },
       cambiarTanto: function () {
         state.us = 0; state.them = 0; state.winner = null; state.target = null;
@@ -361,6 +387,15 @@
     /* ── Arranque ── */
     load();
     render();
+
+    /* ── #1: bloquear zoom por doble toque y por pellizco (iOS ignora user-scalable en parte) ── */
+    var ultimoToque = 0;
+    document.addEventListener("touchend", function (e) {
+      var ahora = Date.now();
+      if (ahora - ultimoToque <= 300) { e.preventDefault(); } // dos toques muy seguidos = doble tap → cancelar
+      ultimoToque = ahora;
+    }, { passive: false });
+    document.addEventListener("gesturestart", function (e) { e.preventDefault(); }); // pellizco
 
     /* ── Registro del service worker (offline) ── */
     if ("serviceWorker" in navigator) {
