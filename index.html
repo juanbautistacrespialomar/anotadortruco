@@ -26,19 +26,17 @@
       --disp:'Caveat','Patrick Hand',cursive;
     }
     *{ box-sizing:border-box; }
-    html,body{ margin:0; padding:0; }
+    html,body{ margin:0; padding:0; height:100%; overflow:hidden; overscroll-behavior:none; }
     html{
-      min-height:100%;
       background:var(--pizarra);   /* color sólido verde: cubre TODO, incluida la franja del home del iPhone */
     }
     body{
-      min-height:100vh; min-height:100dvh;
+      position:fixed; inset:0;            /* pantalla fija: nada de scroll */
       background-color:var(--pizarra);
       background:radial-gradient(120% 120% at 50% 0%, var(--pizarra-hi), var(--pizarra));
       display:flex; align-items:center; justify-content:center;
       padding:16px; padding-top:max(16px, env(safe-area-inset-top));
       padding-bottom:max(16px, env(safe-area-inset-bottom));
-      overscroll-behavior:none;          /* corta el "rebote" que asomaba el blanco al deslizar */
       touch-action:manipulation;              /* evita el zoom por doble toque */
       -webkit-tap-highlight-color:transparent; /* saca el flash gris al tocar */
       -webkit-user-select:none; user-select:none;
@@ -99,6 +97,7 @@
 
     .tr-botones{ display:flex; gap:8px; margin-top:auto; padding-top:10px; }
     .tr-btn{ flex:1; display:flex; align-items:center; justify-content:center; line-height:1; padding:0;
+      touch-action:manipulation;
       font-family:var(--disp); font-weight:700; font-size:30px; color:var(--tiza);
       background:rgba(0,0,0,.22); border:2px solid var(--tiza-tenue); border-radius:12px;
       height:52px; cursor:pointer; transition:transform .1s ease, background .12s ease; }
@@ -114,6 +113,7 @@
     .tr-link:hover{ opacity:1; }
 
     .tr-reset-wrap{ display:flex; justify-content:center; margin-top:14px; }
+    .tr-menu-wrap{ display:flex; justify-content:center; margin-top:12px; }
     .tr-reset{ font-family:var(--disp); font-weight:700; font-size:20px; color:var(--durazno);
       background:rgba(0,0,0,.18); border:2px solid var(--durazno); border-radius:12px;
       padding:10px 28px; cursor:pointer; opacity:.9; transition:transform .1s ease, background .12s ease; }
@@ -170,7 +170,8 @@
       us: 0, them: 0,
       chicosUs: 0, chicosThem: 0,
       winner: null,          // 'us' | 'them' | null
-      confirmReset: false
+      confirmReset: false,
+      pickTanto: false       // overlay para elegir 30/40 sin volver al menú
     };
 
     /* ── Persistencia (localStorage, sobrevive a las actualizaciones) ── */
@@ -305,17 +306,37 @@
           '<div class="tr-reset-wrap">' +
             '<button class="tr-reset" onclick="truco.pedirReset()">Reiniciar</button>' +
           "</div>" +
+          '<div class="tr-menu-wrap">' +
+            '<button class="tr-link" onclick="truco.menu()">↩ Menú</button>' +
+          "</div>" +
 
           // Overlay: ganador del partido
           (state.winner ?
             '<div class="tr-overlay" role="dialog" aria-modal="true">' +
               '<div class="tr-card">' +
                 '<h2 class="tr-win" style="color:' + (state.winner === "us" ? "#a7d8de" : "#eab69f") + '">' +
-                  (state.winner === "us" ? "¡Ganaron Nosotros!" : "¡Ganaron Ellos!") + "</h2>" +
-                '<p class="tr-winsub">Partido terminado · se anotó el chico.</p>' +
+                  (state.winner === "us" ? "¡Ganamos Nosotros!" : "¡Ganaron Ellos!") + "</h2>" +
+                '<p class="tr-winsub">' +
+                  (state.winner === "us" ? "Un trámite." : "Deberíamos revisar bien.") + "</p>" +
                 '<div class="tr-row">' +
                   '<button class="tr-pick tr-small" onclick="truco.otraMano()">¿Revancha?</button>' +
                   '<button class="tr-link" onclick="truco.deshacer()">Deshacer</button>' +
+                "</div>" +
+              "</div>" +
+            "</div>" : "") +
+
+          // Overlay: elegir tanto (30/40) sin volver al menú
+          (state.pickTanto ?
+            '<div class="tr-overlay" role="dialog" aria-modal="true">' +
+              '<div class="tr-card">' +
+                '<h2 class="tr-win" style="color:var(--tiza)">¿A cuánto?</h2>' +
+                '<p class="tr-winsub">Se reinician los puntos de esta mano.</p>' +
+                '<div class="tr-row">' +
+                  '<button class="tr-pick" onclick="truco.pick(30)">30</button>' +
+                  '<button class="tr-pick" onclick="truco.pick(40)">40</button>' +
+                "</div>" +
+                '<div style="margin-top:14px">' +
+                  '<button class="tr-link" onclick="truco.cancelarTanto()">Cancelar</button>' +
                 "</div>" +
               "</div>" +
             "</div>" : "") +
@@ -342,7 +363,7 @@
     window.truco = {
       pick: function (t) {
         state.target = t; state.us = 0; state.them = 0;
-        state.winner = null; save(); render();
+        state.winner = null; state.pickTanto = false; save(); render();
       },
       add: function (lado) {
         if (state.winner) return;
@@ -365,14 +386,20 @@
         save(); render();
       },
       deshacer: function () {
-        // revierte el chico recién anotado (ese partido se cancela) y vuelve a la pantalla de inicio
-        if (state.winner === "us") state.chicosUs = Math.max(0, state.chicosUs - 1);
-        else if (state.winner === "them") state.chicosThem = Math.max(0, state.chicosThem - 1);
+        // cancela el partido y reinicia TODO (puntos y chicos), volviendo al menú
+        state.chicosUs = 0; state.chicosThem = 0;
         state.winner = null; state.us = 0; state.them = 0; state.target = null;
         save(); render();
       },
       cambiarTanto: function () {
-        state.us = 0; state.them = 0; state.winner = null; state.target = null;
+        // no vuelve al menú: muestra el overlay con 30/40 encima del tablero
+        state.pickTanto = true; render();
+      },
+      cancelarTanto: function () { state.pickTanto = false; render(); },
+      menu: function () {
+        // vuelve a la pantalla principal (conserva los chicos del historial)
+        state.target = null; state.winner = null; state.us = 0; state.them = 0;
+        state.pickTanto = false; state.confirmReset = false;
         save(); render();
       },
       pedirReset: function () { state.confirmReset = true; render(); },
@@ -388,11 +415,14 @@
     load();
     render();
 
-    /* ── #1: bloquear zoom por doble toque y por pellizco (iOS ignora user-scalable en parte) ── */
+    /* ── #1: bloquear zoom por doble toque y por pellizco (iOS ignora user-scalable en parte) ──
+       OJO: solo prevenimos en zonas NO interactivas. Si hiciéramos preventDefault sobre un
+       botón, iOS cancela el "click" y se pierden los toques rápidos (no sumaba de a uno). */
     var ultimoToque = 0;
     document.addEventListener("touchend", function (e) {
       var ahora = Date.now();
-      if (ahora - ultimoToque <= 300) { e.preventDefault(); } // dos toques muy seguidos = doble tap → cancelar
+      var sobreControl = e.target.closest && e.target.closest("button, a, .tr-link, .tr-pick");
+      if (ahora - ultimoToque <= 300 && !sobreControl) { e.preventDefault(); } // doble tap en vacío → cancelar zoom
       ultimoToque = ahora;
     }, { passive: false });
     document.addEventListener("gesturestart", function (e) { e.preventDefault(); }); // pellizco
